@@ -1,0 +1,10 @@
+/packages
+/.paket/load
+/src/DataImporter.Psma.Host/bin
+/src/*/bin
+/src/*/obj
+/tests/*/bin
+/tests/*/obj
+/paket-files
+***/.publish
+/.build
