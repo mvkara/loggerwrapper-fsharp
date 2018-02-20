@@ -63,7 +63,7 @@ module ModuleToLog =
 
   let rec doSomethingFunc loggerFactory () = 
     let logger = Logger.createLoggerFromMemberName <@ doSomethingFunc @>
-
+```
 
 # Logging
 
