@@ -1,16 +1,9 @@
-module LoggerWrapper.FSharp.GlobalSink
+module LoggerWrapper.FSharp.CompositeLoggingFactory
 
-open Logger
-
-let mutable private globalSinks = []
-
-let registerLogFactory (loggingFactory: LoggingFactory) = globalSinks <- loggingFactory :: globalSinks
-
-// Gets a global sink logging factory. Note that the only logging sinks/factories considered 
-// are the sources registered when the logging factory is used to create a logger.
-let globalSinkLoggingFactory : LoggingFactory = fun loggerName logLevel ->
+/// Builds a composite logging factory which when used for logging logs to all factories provided.
+let compositeLoggingFactory loggingFactories : LoggingFactory = fun loggerName logLevel ->
     let (listOfAlwaysApplicableLoggers, listOfPotentallyApplicableLoggers) = 
-        globalSinks
+        loggingFactories
         |> List.fold 
             (fun (aal, pal) loggingFactory -> 
                 (match loggingFactory loggerName logLevel with 
@@ -34,3 +27,11 @@ let globalSinkLoggingFactory : LoggingFactory = fun loggerName logLevel ->
                 for logLevelLoggerFunc in loggers do logLevelLoggerFunc exOpt message
             |> Some)
         |> PotentiallyApplicable
+
+let mutable private globalSinks = []
+
+// Gets a singleton composite logging factory. Note: When creating a logger only logger factories registered at the time will be considered.
+let globalCompositeFactory = compositeLoggingFactory globalSinks
+
+// Registers a log factory into the singleton composite logging factory provided in this module.
+let registerLogFactoryIntoGlobal (loggingFactory: LoggingFactory) = globalSinks <- loggingFactory :: globalSinks

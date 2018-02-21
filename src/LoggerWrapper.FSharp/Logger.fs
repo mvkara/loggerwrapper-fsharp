@@ -18,6 +18,8 @@ type [<RequireQualifiedAccess>] LogLevel =
     | Error
     | Fatal
     | Warn
+    | Trace
+    | Verbose
 
 type LoggingContext = { LoggerName: string; LogLevel: LogLevel }
 

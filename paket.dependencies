@@ -1,1 +1,4 @@
 source https://www.nuget.org/api/v2
+
+nuget Expecto 5.1.2
+nuget FSharp.Core >= 4 redirects: force

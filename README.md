@@ -7,6 +7,7 @@ Some features:
 
 - Printf style logging to any logging framework. Note that logging strings aren't built/allocated if logging is turned off to save performance especially around Debug logging.
 - Global logging sink as a singleton; meaning logging factories don't have to clutter your app if you prefer this style which is similar to many .NET logging frameworks (e.g Log4Net, NLog).
+- No other package dependencies required to allow logging to function (besides FSharp.Core).
 - etc.
 
 ## Writing your own logging sink
@@ -65,7 +66,7 @@ module ModuleToLog =
     let logger = Logger.createLoggerFromMemberName <@ doSomethingFunc @>
 ```
 
-# Logging
+## Logging
 
 Logging is done via the Logger.logFormat* functions. Example is below
 
@@ -80,6 +81,14 @@ especially around Debug or Trace logging. As an example:
 let logger = logFactory "LoggerName" LogLevel.Info
 Logger.logFormat logger "Example typesafe log %s %A" "1" (2, 3)
 ```
+
+## Composite logging factory
+
+This is provided if you want your logging to log to more than one target for any particular reason.
+
+In addition the module provides a optional singleton composite logging factory that can be used as an alternative to passing around the logger factory/loggers throughout your program.
+Simply initialise the logger factory you want to use and register it before creating loggers. Many logging frameworks are static in their settings (e.g. log4net) so in this instance
+it may ease the burden of using them in an existing C# context.
 
 # Releases
 

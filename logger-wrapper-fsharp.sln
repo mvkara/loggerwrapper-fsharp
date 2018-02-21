@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{F722D4AC-DFFB-432E-ADD8-882275CE9BA0}"
+	ProjectSection(SolutionItems) = preProject
+		paket.dependencies = paket.dependencies
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E9A3D4F9-3B8F-4786-B7F0-114090644FC5}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LoggerWrapper.FSharp", "src\LoggerWrapper.FSharp\LoggerWrapper.FSharp.fsproj", "{941F6474-F969-4333-BE9B-417ECE60BA94}"

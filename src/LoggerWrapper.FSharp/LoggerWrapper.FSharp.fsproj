@@ -1,10 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="DoNothingFunctionBuilder.fs" />
-    <Compile Include="LoggerModule.fs" />
-    <Compile Include="GlobalLoggingSink.fs" />
+    <Compile Include="Logger.fs" />
+    <Compile Include="CompositeLoggingFactory.fs" />
+    <Content Include="app.config" />
   </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
