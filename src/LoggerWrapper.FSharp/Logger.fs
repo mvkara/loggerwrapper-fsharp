@@ -51,7 +51,7 @@ module Logger =
     let createLogger (loggingFactory: LoggingFactory) loggerName = loggingFactory loggerName
 
     /// Attempts to get the name of the member/value/function referred to in the quotation.
-    let rec internal getNameFromQuotation q = 
+    let rec getNameFromQuotation q = 
         match q with 
         | PropertyGet(_, name, _) -> name.Name
         | Lambda (_, Lambda (_, Call (_, name, _))) -> name.Name
@@ -61,7 +61,7 @@ module Logger =
         | _ -> failwithf "Quotation not supported [%A]" q
 
     /// Gets the enclosing type of the member/value/function referred to in the quotation.
-    let rec internal getNameOfEnclosingType q = 
+    let rec getNameOfEnclosingType q = 
         match q with 
         | PropertyGet(_, name, _) -> name.DeclaringType.Name
         | Lambda (_, Lambda (_, Call (_, name, _))) -> name.DeclaringType.Name
