@@ -5,8 +5,8 @@ Contains handly utility functions that are useful if you are in a project that r
 
 Some features:
 
-- Printf style logging to any logging framework. Note that logging strings aren't built/allocated if logging is turned off to save performance especially around Debug logging.
-- Global logging sink as a singleton; meaning logging factories don't have to clutter your app if you prefer this style which is similar to many .NET logging frameworks (e.g Log4Net, NLog).
+- Printf style logging for any logging framework. Note that logging strings aren't built/allocated if logging is turned off to save performance especially around Debug logging.
+- Global logging sink as a singleton; meaning logging factories don't have to clutter your app if you prefer this style which is similar to many static logging .NET frameworks (e.g Log4Net, NLog).
 - No other package dependencies required to allow logging to function (besides FSharp.Core).
 - etc.
 
@@ -17,7 +17,7 @@ An example of how to wrap a console logger is below:
 ```
 let consoleLoggingSink applicablePredicate allowRuntimeChange : LoggingFactory = fun loggerName logLevel -> 
     
-    let consoleLogLevelLogger : LogLevelLogger = 
+    let consoleLogLevelLogger = 
         fun exnOpt message ->
             match exnOpt with
             | Some(e) -> printfn "%A %s [Error: %s]" logLevel message e.StackTrace
@@ -29,15 +29,17 @@ let consoleLoggingSink applicablePredicate allowRuntimeChange : LoggingFactory =
         else None
 
     if allowRuntimeChange
-    then PotentiallyApplicable buildLoggerOpt
+    then Deferred buildLoggerOpt
     elif applicablePredicate loggerName logLevel
     then Applicable consoleLogLevelLogger
     else NeverApplicable
 ```
 
-In this example the applicability of whether the log should trigger is decided by the applicablePredicate function. Note that the allowRuntime change variable exposes the user to a tradeoff - if logging levels don't need to change at runtime we can move the applicability check to the initialisation of the logger rather than the logger call by setting this to false.
+In this example the applicability of whether the log should trigger is decided by the applicablePredicate function. 
 
-When wrapping most logging frameworks you simply invoke the underlying frameworks IsApplicable method instead.
+Note that the allowRuntime change variable exposes the user to a tradeoff; if logging levels don't need to change at runtime we can move the applicability check to the initialisation of the logger rather than the logger call by setting this to false.
+
+When wrapping most logging frameworks you simply invoke the underlying frameworks IsApplicable method instead for the applicability check.
 
 ## Creating a logger
 
@@ -64,6 +66,8 @@ module ModuleToLog =
 
   let rec doSomethingFunc loggerFactory () = 
     let logger = Logger.createLoggerFromMemberName <@ doSomethingFunc @>
+    // Rest of method code below...
+    ()
 ```
 
 ## Logging
@@ -71,15 +75,15 @@ module ModuleToLog =
 Logging is done via the Logger.logFormat* functions. Example is below
 
 ```
-Logger.logFormat (logFactory LogLevel.Info) "Example typesafe log %s %A" "1" (2, 3)
+Logger.logFormat (logger LogLevel.Info) "Example typesafe log %s %A" "1" (2, 3)
 ```
 
-Note: If runtime logging applicability check is disabled it may be worth creating loggers per level separately if performance is concern
-especially around Debug or Trace logging. As an example:
+Note: If runtime logging applicability check is disabled and performance is a concern it may be worth creating LoggerFunc's per level in advance especially around Debug or Trace logging.
+This amortizes the cost of checking if the logger is applicable to only when the logging function is built. As an example:
 
 ```
-let logger = logFactory "LoggerName" LogLevel.Info
-Logger.logFormat logger "Example typesafe log %s %A" "1" (2, 3)
+let debugLoggerFunc = logFactory "LoggerName" LogLevel.Debug // Note I applied the LogLevel as well
+Logger.logFormat debugLoggerFunc "Example typesafe log %s %A" "1" (2, 3)
 ```
 
 ## Composite logging factory

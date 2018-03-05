@@ -7,11 +7,13 @@ type LoggerName = string
 
 type LoggerFunc = exn option -> string -> unit
 
+/// The logger for a given LoggerName and LogLevel.
 type [<Struct>] Logger = 
     | Applicable of applicableLogger: LoggerFunc
     | Deferred of potentiallyApplicable: (unit -> LoggerFunc option)
     | NeverApplicable
 
+/// LogLevels available to the LoggerWrapper.
 type [<RequireQualifiedAccess>] LogLevel = 
     | Info
     | Debug
@@ -21,9 +23,13 @@ type [<RequireQualifiedAccess>] LogLevel =
     | Trace
     | Verbose
 
-type LoggerForLogLevel = LogLevel -> Logger
-type LoggingFactory = LoggerName -> LoggerForLogLevel
+/// A logger created from the logger factory with an assigned logger name.
+type NamedLogger = LogLevel -> Logger
 
+/// The factory function used to created named loggers.
+type LoggingFactory = LoggerName -> NamedLogger
+
+/// Contains functions for working with logging factories and any loggers built from them.
 module Logger = 
 
     let logFormatRaw (logger: Logger)  =
@@ -45,7 +51,7 @@ module Logger =
     let createLogger (loggingFactory: LoggingFactory) loggerName = loggingFactory loggerName
 
     /// Attempts to get the name of the member/value/function referred to in the quotation.
-    let rec getNameFromQuotation q = 
+    let rec internal getNameFromQuotation q = 
         match q with 
         | PropertyGet(_, name, _) -> name.Name
         | Lambda (_, Lambda (_, Call (_, name, _))) -> name.Name
@@ -55,7 +61,7 @@ module Logger =
         | _ -> failwithf "Quotation not supported [%A]" q
 
     /// Gets the enclosing type of the member/value/function referred to in the quotation.
-    let rec getNameOfEnclosingType q = 
+    let rec internal getNameOfEnclosingType q = 
         match q with 
         | PropertyGet(_, name, _) -> name.DeclaringType.Name
         | Lambda (_, Lambda (_, Call (_, name, _))) -> name.DeclaringType.Name
@@ -66,6 +72,7 @@ module Logger =
 
     /// Creates a logger with the logger name set to the name of the value quoted.
     /// e.g <@ Module.ModuleLogger @> will create a logger with the name of "ModuleLogger".
+    /// Example usage: let rec exampleLogger = Logger.createLoggerFromMemberName <@ exampleLogger @> 
     let createLoggerFromMemberName (loggingFactory: LoggingFactory) memberQuotation = loggingFactory (getNameFromQuotation memberQuotation)
 
     /// Creates a logger with the logger name set to the type enclosing the value quoted.
