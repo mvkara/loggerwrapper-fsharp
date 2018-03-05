@@ -2,9 +2,6 @@ module LoggerWrapper.FSharp.DoNothingFunctionBuilder
 
 open Microsoft.FSharp.Reflection
 open System
-open System.Collections.Concurrent
-
-let private doNothingCache = ConcurrentDictionary<Type, obj>()
 
 type BuildNothing =
     static member BuildNothingFunc<'tin>() = (fun (_: 'tin) -> ())
