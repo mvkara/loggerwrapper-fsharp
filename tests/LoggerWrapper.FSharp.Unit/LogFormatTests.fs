@@ -6,19 +6,11 @@ open LoggerWrapper.FSharp
 let stubLoggerName = "TestLogger"
 let stubLoggerLevel = LogLevel.Info
 
-// TODO: What's the point of not always checking if the logLevel reastically will be checked
-// every time? (i.e logFormat always takes in a logLevel anyway?)
-// Maybe we have over-engineered this thing?
-
-type Log = {
-    LogLevel: LogLevel
-    Message: string
-    Exception: exn option
-}
+type Log = { LogLevel: LogLevel; Message: string; Exception: exn option }
 
 let buildTestLoggerFactory (logLineList: ResizeArray<Log>) applicablePredicate allowRuntimeChange : LoggingFactory = fun loggerName logLevel -> 
         
-    let consoleLogLevelLogger : LogLevelLoggerFunc = 
+    let consoleLogLevelLogger : LoggerFunc = 
         fun exnOpt message -> logLineList.Add({ LogLevel = logLevel; Message = message; Exception = exnOpt })
     
     let buildLoggerOpt() =
@@ -27,7 +19,7 @@ let buildTestLoggerFactory (logLineList: ResizeArray<Log>) applicablePredicate a
         else None
 
     if allowRuntimeChange
-    then PotentiallyApplicable buildLoggerOpt
+    then Deferred buildLoggerOpt
     elif applicablePredicate loggerName logLevel
     then Applicable consoleLogLevelLogger
     else NeverApplicable

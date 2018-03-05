@@ -5,28 +5,28 @@ let compositeLoggingFactory loggingFactories : LoggingFactory = fun loggerName l
     let (listOfAlwaysApplicableLoggers, listOfPotentallyApplicableLoggers) = 
         loggingFactories
         |> List.fold 
-            (fun (aal, pal) loggingFactory -> 
+            (fun (applicableLoggers, deferredLoggers) loggingFactory -> 
                 (match loggingFactory loggerName logLevel with 
-                 | NeverApplicable -> (aal, pal)
-                 | PotentiallyApplicable(getLoggerFunc) -> (aal, getLoggerFunc :: pal)
-                 | Applicable(loggerFunc) -> (loggerFunc :: aal, pal)))
+                 | NeverApplicable -> (applicableLoggers, deferredLoggers)
+                 | Deferred(getLoggerFunc) -> (applicableLoggers, getLoggerFunc :: deferredLoggers)
+                 | Applicable(loggerFunc) -> (loggerFunc :: applicableLoggers, deferredLoggers)))
             ([], [])   
 
-    if List.isEmpty listOfAlwaysApplicableLoggers && List.isEmpty listOfPotentallyApplicableLoggers
-    then Logger.NeverApplicable
-    elif List.isEmpty listOfPotentallyApplicableLoggers
-    then Applicable (fun exnOpt message -> for l in listOfAlwaysApplicableLoggers do l exnOpt message)
-    else 
-        (fun () -> 
-            fun exOpt message -> 
-                let currentlyAppliedLoggers = 
-                    listOfPotentallyApplicableLoggers |> List.collect (fun logApplicableFunc -> logApplicableFunc() |> Option.toList)
+    let inline applyLoggers loggerList exOpt message = for logLevelLoggerFunc in loggerList do logLevelLoggerFunc exOpt message
 
-                let loggers = listOfAlwaysApplicableLoggers |> Seq.append currentlyAppliedLoggers
-
-                for logLevelLoggerFunc in loggers do logLevelLoggerFunc exOpt message
-            |> Some)
-        |> PotentiallyApplicable
+    match (listOfAlwaysApplicableLoggers, listOfPotentallyApplicableLoggers) with
+    | ([], []) -> NeverApplicable
+    | (_, []) -> Applicable (applyLoggers listOfAlwaysApplicableLoggers)
+    | (_, _) -> 
+        let logger = 
+            fun () -> 
+                let currentlyAppliedLoggers = listOfPotentallyApplicableLoggers |> List.collect (fun logApplicableFunc -> logApplicableFunc() |> Option.toList)
+                if List.isEmpty currentlyAppliedLoggers && List.isEmpty listOfAlwaysApplicableLoggers 
+                then None
+                else Some (fun exOpt message -> 
+                    applyLoggers currentlyAppliedLoggers exOpt message 
+                    applyLoggers listOfAlwaysApplicableLoggers exOpt message )
+        Deferred logger
 
 let mutable private globalSinks = []
 

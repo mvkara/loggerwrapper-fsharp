@@ -5,11 +5,11 @@ open Microsoft.FSharp.Quotations.Patterns
 
 type LoggerName = string
 
-type LogLevelLoggerFunc = exn option -> string -> unit
+type LoggerFunc = exn option -> string -> unit
 
 type [<Struct>] Logger = 
-    | Applicable of applicableLogger: LogLevelLoggerFunc
-    | PotentiallyApplicable of potentiallyApplicable: (unit -> LogLevelLoggerFunc option)
+    | Applicable of applicableLogger: LoggerFunc
+    | Deferred of potentiallyApplicable: (unit -> LoggerFunc option)
     | NeverApplicable
 
 type [<RequireQualifiedAccess>] LogLevel = 
@@ -21,10 +21,6 @@ type [<RequireQualifiedAccess>] LogLevel =
     | Trace
     | Verbose
 
-type LoggingContext = { LoggerName: string; LogLevel: LogLevel }
-
-type [<Struct>] LogInfo = { LoggingContext: LoggingContext; Message: string; Exception: exn }
-
 type LoggerForLogLevel = LogLevel -> Logger
 type LoggingFactory = LoggerName -> LoggerForLogLevel
 
@@ -34,7 +30,7 @@ module Logger =
         let logFormatFunc loggingFunc = (fun exnOpt -> kprintf (fun s -> loggingFunc exnOpt s))
         match logger with
         | Applicable(loggingFunc) -> logFormatFunc loggingFunc
-        | PotentiallyApplicable(potentiallyApplicable) ->
+        | Deferred(potentiallyApplicable) ->
             (fun exnOpt ->
                 match potentiallyApplicable() with
                 | Some(loggingFunc) -> logFormatFunc loggingFunc exnOpt
