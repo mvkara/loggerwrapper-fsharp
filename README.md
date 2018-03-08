@@ -35,11 +35,37 @@ let consoleLoggingSink applicablePredicate allowRuntimeChange : LoggingFactory =
     else NeverApplicable
 ```
 
-In this example the applicability of whether the log should trigger is decided by the applicablePredicate function. 
+In this example the applicability of whether the log should trigger is decided by the applicablePredicate function. Note that the allowRuntime change variable exposes the user to a tradeoff; if logging levels don't need to change at runtime we can move the applicability check to the initialisation of the logger rather than the logger call by setting this to false. When wrapping most logging frameworks you simply invoke the underlying frameworks IsApplicable method instead for the applicability check.
 
-Note that the allowRuntime change variable exposes the user to a tradeoff; if logging levels don't need to change at runtime we can move the applicability check to the initialisation of the logger rather than the logger call by setting this to false.
+Another example wrapping ASP.NET's ILoggerFactory (Microsoft.Extensions.Logging) that uses the underlying framework's check:
 
-When wrapping most logging frameworks you simply invoke the underlying frameworks IsApplicable method instead for the applicability check.
+```
+open Microsoft.Extensions.Logging
+open LoggerWrapper.FSharp
+
+let createLoggerFactory (loggerFactory: ILoggerFactory) : LoggingFactory = fun loggerName loggerLevel -> 
+
+    let logger = loggerFactory.CreateLogger(loggerName)
+    
+    let inline convertLoggerLevels (loggerLevel: LoggerWrapper.FSharp.LogLevel) = 
+        match loggerLevel with 
+        | LogLevel.Info -> Microsoft.Extensions.Logging.LogLevel.Information
+        | LogLevel.Debug -> Microsoft.Extensions.Logging.LogLevel.Debug
+        | LogLevel.Error -> Microsoft.Extensions.Logging.LogLevel.Error
+        | LogLevel.Fatal -> Microsoft.Extensions.Logging.LogLevel.Critical
+        | LogLevel.Verbose -> Microsoft.Extensions.Logging.LogLevel.Trace
+        | LogLevel.Warn -> Microsoft.Extensions.Logging.LogLevel.Warning
+        | LogLevel.Trace -> Microsoft.Extensions.Logging.LogLevel.Trace
+
+    let frameworkLoggingLevel = convertLoggerLevels loggerLevel
+
+    let loggerFunc = fun exOpt message -> 
+        match exOpt with 
+        | Some(ex) -> logger.Log<_>(frameworkLoggingLevel, EventId(0), message, ex, fun s _ -> s)
+        | None -> logger.Log<_>(frameworkLoggingLevel, EventId(0), message, null, fun s _ -> s)
+    
+    if logger.IsEnabled(frameworkLoggingLevel) then Applicable loggerFunc else NeverApplicable
+```
 
 ## Creating a logger
 
