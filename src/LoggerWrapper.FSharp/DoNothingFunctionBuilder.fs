@@ -19,8 +19,8 @@ let rec private buildDoNothingFunctionRec (t: Type) =
        let actualMethod = genericMethod.MakeGenericMethod([| domain |])
        actualMethod.Invoke(null, [||])       
 
-type private BackingField<'tFunc> = 
-    static member IgnoreFunc = buildDoNothingFunctionRec typeof<'tFunc> :?> 'tFunc
+type private BackingField<'tFunc> private () = 
+    static member val IgnoreFunc = buildDoNothingFunctionRec typeof<'tFunc> :?> 'tFunc
 
 
 /// For any type signature that ends in unit returns a curried ignore function.
