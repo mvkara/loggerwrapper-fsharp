@@ -4,4 +4,4 @@ authors mvkra
 description A library allowing you to wrap most logging libraries with a F# friendly API.
 projectUrl https://github.com/mvkra/loggerwrapper-fsharp
 include-pdbs true
-tags log logger logging fsharp
+tags log logger logging fsharp f#
