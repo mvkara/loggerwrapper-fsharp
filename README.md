@@ -12,6 +12,8 @@ Some features:
 
 ## Writing your own logging sink
 
+### Console Logger Example ###
+
 An example of how to wrap a console logger is below:
 
 ```
@@ -37,6 +39,7 @@ let consoleLoggingSink applicablePredicate allowRuntimeChange : LoggingFactory =
 
 In this example the applicability of whether the log should trigger is decided by the applicablePredicate function. Note that the allowRuntime change variable exposes the user to a tradeoff; if logging levels don't need to change at runtime we can move the applicability check to the initialisation of the logger rather than the logger call by setting this to false. When wrapping most logging frameworks you simply invoke the underlying frameworks IsApplicable method instead for the applicability check.
 
+### ASP.NET/Microsoft.Extensions.Logging Example ###
 Another example wrapping ASP.NET's ILoggerFactory (Microsoft.Extensions.Logging) that uses the underlying framework's check:
 
 ```
@@ -112,13 +115,28 @@ let debugLoggerFunc = logFactory "LoggerName" LogLevel.Debug // Note I applied t
 Logger.logFormat debugLoggerFunc "Example typesafe log %s %A" "1" (2, 3)
 ```
 
-## Composite logging factory
+## Composite logging factory/global logging
 
-This is provided if you want your logging to log to more than one target for any particular reason.
+This is provided if you want your logging to log to more than one target for any particular reason. It's also useful as a way to avoid passing multiple logging factories through your program stack and/or outputting logs to more than one source.
 
-In addition the module provides a optional singleton composite logging factory that can be used as an alternative to passing around the logger factory/loggers throughout your program.
-Simply initialise the logger factory you want to use and register it before creating loggers. Many logging frameworks are static in their settings (e.g. log4net) so in this instance
-it may ease the burden of using them in an existing C# context.
+In addition the module provides a optional static/singleton composite logging factory instance that can be used as an alternative to passing around the logger factory/loggers throughout your program. Simply initialise the logger factory you want to use by calling ```CompositeLoggingFactory.registerLogFactoryIntoGlobal``` with the logger factories you want to use before creating loggers.
+
+An example showing both is below:
+
+```
+module SetupProgram = 
+    let registerLoggingFactoryCreatedElsewhere (loggingFactory: LoggingFactory) = 
+        // This registers the logging factory provided as  a sink to the globalLoggingFactory used for logger above.
+        CompositeLoggingFactory.registerLogFactoryIntoGlobal loggingFactory
+
+// Any module in the program
+module ModuleToLog = 
+    let rec logger = Logger.createLoggerFromMemberType CompositeLoggingFactory.globalCompositeFactory <@ logger @>
+
+    let exampleFunction() = 
+        Logger.logFormat (logger LogLevel.Info) "This will use the ModuleToLog logger with the log factories registered in the global composite factory"   
+```
+
 
 # Releases
 
